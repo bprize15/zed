@@ -1318,7 +1318,7 @@ impl Default for SelectionEffects {
         Self {
             nav_history: None,
             completions: true,
-            scroll: Some(Autoscroll::fit()),
+            scroll: Some(Autoscroll::oldest()),
         }
     }
 }

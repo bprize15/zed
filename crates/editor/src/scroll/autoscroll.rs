@@ -24,6 +24,11 @@ impl Autoscroll {
         Self::Strategy(AutoscrollStrategy::Newest, None)
     }
 
+    /// scrolls the minimal amount to fit the oldest cursor
+    pub fn oldest() -> Self {
+        Self::Strategy(AutoscrollStrategy::Oldest, None)
+    }
+
     /// scrolls so the newest cursor is vertically centered
     pub fn center() -> Self {
         Self::Strategy(AutoscrollStrategy::Center, None)
@@ -80,6 +85,7 @@ impl Into<SelectionEffects> for Option<Autoscroll> {
 pub enum AutoscrollStrategy {
     Fit,
     Newest,
+    Oldest,
     #[default]
     Center,
     Focused,
@@ -181,6 +187,20 @@ impl Editor {
                     .as_f32();
                 target_top = newest_selection_top;
                 target_bottom = newest_selection_top + 1.;
+            } else if matches!(
+                autoscroll,
+                Autoscroll::Strategy(AutoscrollStrategy::Oldest, _)
+            ) {
+                let oldest_selection_top = selections
+                    .iter()
+                    .min_by_key(|s| s.id)
+                    .unwrap()
+                    .head()
+                    .to_display_point(&display_map)
+                    .row()
+                    .as_f32();
+                target_top = oldest_selection_top;
+                target_bottom = oldest_selection_top + 1.;
             }
         }
 
@@ -214,7 +234,7 @@ impl Editor {
         }
 
         let was_autoscrolled = match strategy {
-            AutoscrollStrategy::Fit | AutoscrollStrategy::Newest => {
+            AutoscrollStrategy::Fit | AutoscrollStrategy::Newest | AutoscrollStrategy::Oldest => {
                 let margin = margin.min(self.scroll_manager.vertical_scroll_margin);
                 let target_top = (target_top - margin).max(0.0);
                 let target_bottom = target_bottom + margin;
